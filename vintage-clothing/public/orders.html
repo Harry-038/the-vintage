@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Track Your Order — The Vintage Clothing</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="site-header"></div>
+<div class="container" style="padding:40px 0 80px; max-width:640px;">
+  <h1 style="font-size:30px;margin-bottom:8px;">Track your order</h1>
+  <p style="color:var(--stone);margin-bottom:24px;">Enter your order number (e.g. VC-482910) and the phone number used at checkout.</p>
+  <form id="track-form" class="form-grid" style="margin-bottom:24px;">
+    <div class="field"><label>Order number</label><input name="order_number" required placeholder="VC-482910" /></div>
+    <div class="field"><label>Phone number</label><input name="phone" required /></div>
+    <div class="field full"><button class="btn btn-brass" type="submit">Track order</button></div>
+  </form>
+  <div id="track-result"></div>
+</div>
+<div id="site-footer"></div>
+<script src="/js/common.js"></script>
+<script src="/js/order-view.js"></script>
+<script>
+let CURRENT_ORDER = null, CURRENT_PHONE = null;
+
+qs('#track-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const order_number = fd.get('order_number').trim(), phone = fd.get('phone').trim();
+  try {
+    const { order, items, history } = await api(`/api/orders/track?order_number=${encodeURIComponent(order_number)}&phone=${encodeURIComponent(phone)}`);
+    CURRENT_ORDER = { order, items }; CURRENT_PHONE = phone;
+    let html = renderOrderCard(order, items, history);
+    if (order.status === 'delivered') {
+      html += `
+        <div class="notice" id="returns" style="margin-top:20px;">
+          <h3 style="margin-bottom:10px;">Need a different size, or want to return this?</h3>
+          <form id="return-form" class="form-grid">
+            <div class="field full"><label>Which item</label>
+              <select name="orderItemId">${items.map((i) => `<option value="${i.id}">${i.name} (${i.size}/${i.color})</option>`).join('')}</select>
+            </div>
+            <div class="field"><label>Request type</label>
+              <select name="type"><option value="exchange">Size exchange</option><option value="return">Return for refund</option></select>
+            </div>
+            <div class="field"><label>Reason</label><input name="reason" placeholder="e.g. Runs small" /></div>
+            <div class="field full"><button class="btn btn-outline" type="submit">Submit request</button></div>
+          </form>
+          <div id="return-msg"></div>
+        </div>`;
+    }
+    qs('#track-result').innerHTML = html;
+    const returnForm = qs('#return-form');
+    if (returnForm) returnForm.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const rfd = new FormData(ev.target);
+      try {
+        await api('/api/returns', { method: 'POST', body: {
+          orderNumber: order_number, phone,
+          orderItemId: rfd.get('orderItemId'), type: rfd.get('type'), reason: rfd.get('reason'),
+        }});
+        qs('#return-msg').innerHTML = `<div class="notice ok" style="margin-top:12px;">Request submitted. The shop will review it and update your order.</div>`;
+        ev.target.reset();
+      } catch (err) {
+        qs('#return-msg').innerHTML = `<div class="notice err" style="margin-top:12px;">${err.message}</div>`;
+      }
+    });
+  } catch (err) {
+    qs('#track-result').innerHTML = `<div class="notice err">${err.message}</div>`;
+  }
+});
+</script>
+</body>
+</html>

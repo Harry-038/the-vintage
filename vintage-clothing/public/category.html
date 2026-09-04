@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title id="page-title">Shop — The Vintage Clothing</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="site-header"></div>
+
+<div class="container">
+  <div class="section-head" style="margin-top:32px;"><h2 id="cat-heading">All products</h2></div>
+  <div class="browse-layout">
+    <aside class="filters">
+      <div class="filter-group">
+        <h4>Size</h4>
+        <div id="f-size"></div>
+      </div>
+      <div class="filter-group">
+        <h4>Color</h4>
+        <div id="f-color"></div>
+      </div>
+      <div class="filter-group">
+        <h4>Fit</h4>
+        <div id="f-fit"></div>
+      </div>
+      <div class="filter-group">
+        <h4>Occasion</h4>
+        <div id="f-occasion"></div>
+      </div>
+      <div class="filter-group">
+        <h4>Price range</h4>
+        <div class="filter-option"><label style="display:flex;gap:8px;width:100%;">
+          <input type="number" id="f-min" placeholder="Min" style="width:50%;border:1px solid var(--line);padding:6px;border-radius:3px;">
+          <input type="number" id="f-max" placeholder="Max" style="width:50%;border:1px solid var(--line);padding:6px;border-radius:3px;">
+        </label></div>
+        <button class="btn btn-outline btn-sm" id="apply-price" style="margin-top:8px;">Apply</button>
+      </div>
+      <button class="btn btn-sm" id="clear-filters" style="background:none;color:var(--maroon);border:none;padding:0;">Clear all filters</button>
+    </aside>
+    <main>
+      <div class="sort-bar">
+        <span id="result-count"></span>
+        <select id="sort-select">
+          <option value="">Sort: Newest</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+        </select>
+      </div>
+      <div class="product-grid" id="product-grid"></div>
+    </main>
+  </div>
+</div>
+
+<div id="site-footer"></div>
+<script src="/js/common.js"></script>
+<script src="/js/home.js"></script>
+<script src="/js/category.js"></script>
+</body>
+</html>

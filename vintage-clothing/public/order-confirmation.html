@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Order Confirmed — The Vintage Clothing</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="site-header"></div>
+<div class="container" style="padding:40px 0 80px; max-width:640px;">
+  <h1 style="font-size:30px;margin-bottom:8px;">Thank you — your order is placed.</h1>
+  <p style="color:var(--stone);margin-bottom:28px;">A confirmation would normally go out by SMS/WhatsApp. Save your order number and phone to track it anytime.</p>
+  <div id="confirm-root"></div>
+  <a href="/category.html" class="btn btn-outline" style="margin-top:24px;">Continue shopping</a>
+</div>
+<div id="site-footer"></div>
+<script src="/js/common.js"></script>
+<script src="/js/order-view.js"></script>
+<script>
+(async function () {
+  const params = new URLSearchParams(location.search);
+  const order_number = params.get('order'), phone = params.get('phone');
+  Cart.clear();
+  try {
+    const { order, items, history } = await api(`/api/orders/track?order_number=${encodeURIComponent(order_number)}&phone=${encodeURIComponent(phone)}`);
+    qs('#confirm-root').innerHTML = renderOrderCard(order, items, history);
+  } catch (e) {
+    qs('#confirm-root').innerHTML = `<div class="notice err">${e.message}</div>`;
+  }
+})();
+</script>
+</body>
+</html>

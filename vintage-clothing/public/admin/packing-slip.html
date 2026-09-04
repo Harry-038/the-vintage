@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><title>Packing Slip</title>
+<style>
+  body { font-family: 'Courier New', monospace; padding: 40px; max-width: 620px; margin:0 auto; color:#111; }
+  h1 { font-size: 20px; border-bottom: 2px solid #111; padding-bottom: 10px; }
+  table { width:100%; border-collapse: collapse; margin-top: 20px; }
+  td, th { border: 1px solid #111; padding: 8px; font-size: 13px; text-align:left; }
+  .addr { margin: 20px 0; padding: 14px; border: 1px solid #111; }
+  .row { display:flex; justify-content:space-between; font-size:13px; margin: 4px 0; }
+  @media print { .no-print { display:none; } }
+</style>
+</head>
+<body>
+  <div id="root">Loading…</div>
+  <button class="no-print" onclick="window.print()" style="margin-top:20px;padding:10px 18px;">Print</button>
+<script>
+(async function () {
+  const orderId = new URLSearchParams(location.search).get('order');
+  const res = await fetch('/api/admin/orders/' + orderId, { credentials: 'same-origin' });
+  const { order, items } = await res.json();
+  document.getElementById('root').innerHTML = `
+    <h1>THE VINTAGE CLOTHING — PACKING SLIP</h1>
+    <div class="row"><span>Order: <strong>${order.order_number}</strong></span><span>${new Date(order.created_at).toLocaleDateString('en-IN')}</span></div>
+    <div class="row"><span>Payment: ${order.payment_method.toUpperCase()} (${order.payment_status})</span><span>Status: ${order.status}</span></div>
+    <div class="addr">
+      <strong>DELIVER TO</strong><br>
+      ${order.guest_name}<br>${order.address_line1}<br>${order.address_city}, ${order.address_state} ${order.address_pincode}<br>
+      Phone: ${order.guest_phone}
+    </div>
+    <table>
+      <thead><tr><th>Item</th><th>Size</th><th>Color</th><th>SKU</th><th>Qty</th></tr></thead>
+      <tbody>
+        ${items.map(i => `<tr><td>${i.name}</td><td>${i.size}</td><td>${i.color}</td><td>${i.sku}</td><td>${i.qty}</td></tr>`).join('')}
+      </tbody>
+    </table>
+    <p style="margin-top:24px;font-size:12px;">Courier assignment: __________________  &nbsp;&nbsp; Packed by: __________________</p>
+  `;
+})();
+</script>
+</body>
+</html>

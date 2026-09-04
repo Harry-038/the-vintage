@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Account — The Vintage Clothing</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="site-header"></div>
+<div class="container" style="padding:40px 0 80px; max-width:640px;">
+  <div id="account-root"></div>
+</div>
+<div id="site-footer"></div>
+<script src="/js/common.js"></script>
+<script>
+async function renderAccount() {
+  let customer = null;
+  try { customer = await api('/api/customers/me'); } catch {}
+
+  if (!customer) {
+    qs('#account-root').innerHTML = `
+      <div class="checkout-toggle">
+        <button class="active" id="tab-login">Sign in</button>
+        <button id="tab-register">Create account</button>
+      </div>
+      <div id="auth-forms"></div>
+      <p style="font-size:12.5px;color:var(--stone);margin-top:16px;">Guest checkout is always available too — an account just saves your order history and addresses for next time.</p>
+    `;
+    const formsHTML = {
+      login: `<form id="login-form">
+        <div class="field full"><label>Email</label><input name="email" type="email" required /></div>
+        <div class="field full"><label>Password</label><input name="password" type="password" required /></div>
+        <div id="login-err"></div>
+        <button class="btn btn-brass" type="submit">Sign in</button>
+      </form>`,
+      register: `<form id="register-form">
+        <div class="field full"><label>Name</label><input name="name" required /></div>
+        <div class="form-grid">
+          <div class="field"><label>Email</label><input name="email" type="email" required /></div>
+          <div class="field"><label>Phone</label><input name="phone" required /></div>
+        </div>
+        <div class="field full"><label>Password</label><input name="password" type="password" required minlength="6" /></div>
+        <div id="register-err"></div>
+        <button class="btn btn-brass" type="submit">Create account</button>
+      </form>`,
+    };
+    const showTab = (tab) => {
+      qs('#tab-login').classList.toggle('active', tab === 'login');
+      qs('#tab-register').classList.toggle('active', tab === 'register');
+      qs('#auth-forms').innerHTML = formsHTML[tab];
+      if (tab === 'login') qs('#login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        try { await api('/api/customers/login', { method: 'POST', body: { email: fd.get('email'), password: fd.get('password') } }); location.reload(); }
+        catch (err) { qs('#login-err').innerHTML = `<div class="notice err">${err.message}</div>`; }
+      });
+      else qs('#register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        try { await api('/api/customers/register', { method: 'POST', body: Object.fromEntries(fd) }); location.reload(); }
+        catch (err) { qs('#register-err').innerHTML = `<div class="notice err">${err.message}</div>`; }
+      });
+    };
+    showTab('login');
+    qs('#tab-login').addEventListener('click', () => showTab('login'));
+    qs('#tab-register').addEventListener('click', () => showTab('register'));
+    return;
+  }
+
+  const orders = await api('/api/customers/orders');
+  const addresses = await api('/api/customers/addresses');
+  qs('#account-root').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <div><h1 style="font-size:26px;">Welcome, ${customer.name || customer.email}</h1><p style="color:var(--stone);font-size:13.5px;">${customer.email}</p></div>
+      <button class="btn btn-outline btn-sm" id="logout-btn">Sign out</button>
+    </div>
+
+    <h3 style="margin-bottom:12px;">Order history</h3>
+    ${orders.length ? orders.map((o) => `
+      <div class="notice" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:500;">${o.order_number}</div>
+          <div style="font-size:12.5px;color:var(--stone);">${new Date(o.created_at).toLocaleDateString('en-IN')} &middot; ${money(o.total)}</div>
+        </div>
+        <span class="badge ${o.status}">${o.status}</span>
+      </div>`).join('') : `<p style="color:var(--stone);font-size:14px;">No orders yet.</p>`}
+
+    <h3 style="margin:28px 0 12px;">Saved addresses</h3>
+    ${addresses.length ? addresses.map((a) => `<div class="notice">${a.label}: ${a.line1}, ${a.city}, ${a.state} ${a.pincode}</div>`).join('') : `<p style="color:var(--stone);font-size:14px;margin-bottom:14px;">No saved addresses yet.</p>`}
+    <form id="addr-form" class="form-grid">
+      <div class="field"><label>Label</label><input name="label" placeholder="Home" /></div>
+      <div class="field"><label>Phone</label><input name="phone" /></div>
+      <div class="field full"><label>Address</label><input name="line1" required /></div>
+      <div class="field"><label>City</label><input name="city" required /></div>
+      <div class="field"><label>State</label><input name="state" value="Punjab" /></div>
+      <div class="field"><label>Pincode</label><input name="pincode" required /></div>
+      <div class="field full"><button class="btn btn-outline btn-sm" type="submit">Save address</button></div>
+    </form>
+  `;
+  qs('#logout-btn').addEventListener('click', async () => { await api('/api/customers/logout', { method: 'POST' }); location.reload(); });
+  qs('#addr-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await api('/api/customers/addresses', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) });
+    location.reload();
+  });
+}
+renderAccount();
+</script>
+</body>
+</html>
